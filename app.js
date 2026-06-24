@@ -1,24 +1,21 @@
 /* ══════════════════════════════════════════════════════════════════════════════
-   DASHBOARD NUTRIZIONE ELITE - app.js VERSIONE 3.1 (SUPER BLINDATA)
+   DASHBOARD NUTRIZIONE ELITE - app.js v3.2 (PROTETTO ANTI-CACHING)
 ══════════════════════════════════════════════════════════════════════════════ */
 
-const supabaseUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
-const supabaseKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
+const targetUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
+const targetKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
 
-let supabase = window.supabaseClient || null;
+let sbClient = null;
 
 try {
-  if (!supabase && window.supabase && typeof window.supabase.createClient === 'function') {
-    supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-    window.supabaseClient = supabase;
-    console.log('✅ Supabase inizializzato correttamente e protetto da duplicazioni');
-  } else if (supabase) {
-    console.log('🔄 Supabase già presente, riutilizzo l\'istanza esistente');
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    sbClient = window.supabase.createClient(targetUrl, targetKey);
+    console.log('✅ Connessione database Supabase stabilita correttamente.');
   } else {
-    console.error('❌ Libreria Supabase non caricata globalmente!');
+    console.error('❌ Libreria globale Supabase non trovata.');
   }
 } catch (err) {
-  console.error('❌ Eccezione durante l\'inizializzazione di Supabase:', err);
+  console.error('❌ Errore critico inizializzazione DB:', err);
 }
 
 let currentPatient = null;
@@ -26,42 +23,20 @@ let currentVisitId = null;
 let chartPesoInstance = null;
 let chartCompInstance = null;
 
-const FILES = {
-  logo: 'logo_de_salvo_transparent.png',
-  silM: 'Siluette_Uomo.jpeg',
-  silF: 'Siluette_Donna.jpeg',
-  eliteM: 'COMPOSIZIONE CORPOREA UOMO.JPEG',
-  eliteF: 'COMPOSIZIONE CORPOREA DONNA.JPEG',
-};
-
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ DOM completamente caricato.');
   initEventListeners();
 });
 
 function initEventListeners() {
-  const btnOpenModal = document.getElementById('btn-open-modal');
-  if (btnOpenModal) {
-    btnOpenModal.addEventListener('click', (e) => {
-      e.preventDefault();
-      openModal();
-    });
-    console.log('✅ Listener bottone "Nuovo Paziente" attivato.');
-  }
-
+  document.getElementById('btn-open-modal')?.addEventListener('click', openModal);
   document.getElementById('btn-close-modal')?.addEventListener('click', closeModal);
   document.getElementById('btn-close-modal-cancel')?.addEventListener('click', closeModal);
   document.getElementById('modal-overlay')?.addEventListener('click', closeModal);
   document.getElementById('btn-registra-paziente')?.addEventListener('click', registraPaziente);
   document.getElementById('patient-search')?.addEventListener('input', cercaPazienti);
   document.getElementById('btn-salva-visita')?.addEventListener('click', salvaVisita);
-  document.getElementById('btn-calcola-report')?.addEventListener('click', () => {
-    if (!currentPatient) {
-      alert('⚠️ Seleziona prima un paziente attivo.');
-      return;
-    }
-    generaPDFLogica();
-  });
+  document.getElementById('btn-calcola-report')?.addEventListener('click', elaboraAnteprimaReport);
+  document.getElementById('btn-pdf')?.addEventListener('click', scaricaPDF);
   
   document.getElementById('select-visita-storica')?.addEventListener('change', async (e) => {
     const val = e.target.value;
@@ -75,10 +50,7 @@ function initEventListeners() {
   });
 }
 
-function openModal() {
-  document.getElementById('modal-paziente')?.classList.remove('hidden');
-}
-
+function openModal() { document.getElementById('modal-paziente')?.classList.remove('hidden'); }
 function closeModal() {
   document.getElementById('modal-paziente')?.classList.add('hidden');
   document.getElementById('new-nominativo').value = '';
@@ -89,15 +61,11 @@ function closeModal() {
 async function cercaPazienti(e) {
   const query = e.target.value.toUpperCase().trim();
   const resultsDiv = document.getElementById('search-results');
-  
-  if (query.length < 2) {
-    resultsDiv.innerHTML = '';
-    return;
-  }
-  if (!supabase) return;
+  if (query.length < 2) { resultsDiv.innerHTML = ''; return; }
+  if (!sbClient) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sbClient
       .from('pazienti')
       .select('*')
       .ilike('nominativo', `%${query}%`)
@@ -131,14 +99,11 @@ async function registraPaziente() {
   const sesso = document.getElementById('new-sesso').value;
   const nascita = document.getElementById('new-nascita').value || null;
 
-  if (!nom || !sesso) {
-    alert('⚠️ Campi obbligatori mancanti.');
-    return;
-  }
-  if (!supabase) return;
+  if (!nom || !sesso) { alert('⚠️ Campi obbligatori mancanti.'); return; }
+  if (!sbClient) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sbClient
       .from('pazienti')
       .insert([{ nominativo: nom, sesso, data_nascita: nascita }])
       .select();
@@ -158,20 +123,16 @@ async function selezionaPaziente(id, nominativo, sesso, data_nascita) {
   document.getElementById('search-results').innerHTML = '';
   document.getElementById('patient-search').value = '';
   
-  const nameHeader = document.getElementById('current-patient-name');
-  const genderBadge = document.getElementById('patient-gender-badge');
-  
-  if (nameHeader) nameHeader.textContent = nominativo;
-  if (genderBadge) {
-    genderBadge.textContent = sesso === 'M' ? '👨 Uomo' : '👩 Donna';
-    genderBadge.classList.remove('hidden');
-  }
+  document.getElementById('current-patient-name').textContent = nominativo;
+  const badge = document.getElementById('patient-gender-badge');
+  badge.textContent = sesso === 'M' ? '👨 Uomo' : '👩 Donna';
+  badge.className = `gender-badge ${sesso === 'M' ? 'm' : 'f'}`;
   
   document.getElementById('in-nominativo').value = nominativo;
   document.getElementById('in-sesso').value = sesso;
 
   aggiornaFormUI(sesso);
-  await caricaStoricoVisite(id);
+  await caricaStoricoVisites(id);
   svuotaFormVisita();
   currentVisitId = null;
 }
@@ -209,10 +170,10 @@ function aggiornaFormUI(sesso) {
   }
 }
 
-async function caricaStoricoVisite(pazienteId) {
-  if (!supabase) return;
+async function caricaStoricoVisites(pazienteId) {
+  if (!sbClient) return;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sbClient
       .from('visite')
       .select('*')
       .eq('paziente_id', pazienteId)
@@ -227,21 +188,20 @@ async function caricaStoricoVisite(pazienteId) {
       select.innerHTML += `<option value="${v.id}">Visita del ${dataF} (${v.peso} kg)</option>`;
     });
 
-    aggiornaGrafici(data);
+    renderingGraficiStorici(data);
   } catch (err) {
-    console.error('❌ Errore storico:', err.message);
+    console.error(err);
   }
 }
 
-function aggiornaGrafici(visite) {
+function renderingGraficiStorici(visite) {
   if (visite.length === 0) return;
   const labels = visite.map(v => new Date(v.data_visita).toLocaleDateString('it-IT'));
   const pesi = visite.map(v => v.peso);
 
   if (chartPesoInstance) chartPesoInstance.destroy();
-  
-  const ctxPeso = document.getElementById('chart-peso').getContext('2d');
-  chartPesoInstance = new Chart(ctxPeso, {
+  const ctx = document.getElementById('chart-peso').getContext('2d');
+  chartPesoInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
@@ -251,9 +211,8 @@ function aggiornaGrafici(visite) {
         borderColor: '#1e40af',
         backgroundColor: 'rgba(30, 64, 175, 0.05)',
         borderWidth: 3,
-        tension: 0.2,
-        fill: true,
-        pointRadius: 5
+        tension: 0.1,
+        fill: true
       }]
     },
     options: { responsive: true }
@@ -263,10 +222,7 @@ function aggiornaGrafici(visite) {
 const n = id => parseFloat(document.getElementById(id)?.value) || 0;
 
 async function salvaVisita() {
-  if (!currentPatient) {
-    alert('⚠️ Nessun paziente selezionato.');
-    return;
-  }
+  if (!currentPatient) { alert('⚠️ Seleziona prima un paziente attivo.'); return; }
 
   const payload = {
     paziente_id: currentPatient.id,
@@ -291,35 +247,34 @@ async function salvaVisita() {
     data_visita: new Date().toISOString().split('T')[0]
   };
 
-  if (!supabase) return;
+  if (!sbClient) return;
 
   try {
     let res;
     if (currentVisitId) {
-      res = await supabase.from('visite').update(payload).eq('id', currentVisitId).select();
+      res = await sbClient.from('visite').update(payload).eq('id', currentVisitId).select();
     } else {
-      res = await supabase.from('visite').insert([payload]).select();
+      res = await sbClient.from('visite').insert([payload]).select();
     }
 
     if (res.error) throw res.error;
-
-    alert('✅ Record della visita archiviato con successo!');
-    await caricaStoricoVisite(currentPatient.id);
+    alert('✅ Registro della visita archiviato nel cloud!');
+    await caricaStoricoVisites(currentPatient.id);
   } catch (err) {
     alert('❌ Errore durante il salvataggio: ' + err.message);
   }
 }
 
 async function caricaDatiVisitaSingola(id) {
-  if (!supabase) return;
+  if (!sbClient) return;
   try {
-    const { data, error } = await supabase.from('visite').select('*').eq('id', id).single();
+    const { data, error } = await sbClient.from('visite').select('*').eq('id', id).single();
     if (error) throw error;
 
     document.getElementById('in-eta').value = data.eta || '';
     document.getElementById('in-peso').value = data.peso || '';
     document.getElementById('in-altezza').value = data.altezza || '';
-    document.getElementById('in-laf').value = data.laf || '1.55';
+    document.getElementById('in-laf').value = data.laf || '1.375';
 
     if (document.getElementById('c-collo')) document.getElementById('c-collo').value = data.c_collo || '';
     if (document.getElementById('c-torace')) document.getElementById('c-torace').value = data.c_torace || '';
@@ -341,7 +296,7 @@ async function caricaDatiVisitaSingola(id) {
 
 function svuotaFormVisita() {
   document.getElementById('form-valutazione').reset();
-  document.getElementById('in-laf').value = '1.55';
+  document.getElementById('in-laf').value = '1.375';
 }
 
 function set(id, val) {
@@ -349,7 +304,9 @@ function set(id, val) {
   if (el) el.textContent = val;
 }
 
-async function generaPDFLogica() {
+function elaboraAnteprimaReport() {
+  if (!currentPatient) { alert('⚠️ Seleziona prima un paziente attivo.'); return; }
+
   const sesso = currentPatient.sesso;
   const nominativo = currentPatient.nominativo;
   const peso = n('in-peso');
@@ -363,6 +320,7 @@ async function generaPDFLogica() {
   set('r-nome2', nominativo);
   set('r-data2', odierna);
 
+  // Formule Energetiche
   let bmrV = '-', rmrV = '-', tdeeV = '-', tdeewV = '-';
   if (peso > 0 && altezza > 0 && eta > 0) {
     let bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + (sesso === 'M' ? 5 : -161);
@@ -381,6 +339,7 @@ async function generaPDFLogica() {
   set('r-tdee', tdeeV);
   set('r-tdeew', tdeewV);
 
+  // Calcolo Pliche e Composizione Corporea
   let sommaPliche = 0;
   const plicheList = sesso === 'M' 
     ? ['pettorale', 'ascellare', 'addome', 'soprailiaca', 'tricipitale', 'sottoscapolare', 'coscia']
@@ -389,7 +348,7 @@ async function generaPDFLogica() {
   plicheList.forEach(p => { sommaPliche += n(`p-${p}`); });
   const haPliche = sommaPliche > 0;
 
-  let gccV = '-', fmV = '-', ffmV = '-', ibwV = '-';
+  let gccV = '-', fmV = '-', ffmV = '-', ibwV = '-', kggV = '-', kgmV = '-';
   if (haPliche && peso > 0 && eta > 0) {
     let gcc = 0;
     if (sesso === 'M') {
@@ -408,6 +367,8 @@ async function generaPDFLogica() {
     gccV = gcc.toFixed(1).replace('.', ',') + ' %';
     fmV = kgg.toFixed(1).replace('.', ',') + ' kg';
     ffmV = kgm.toFixed(1).replace('.', ',') + ' kg';
+    kggV = kgg.toFixed(1).replace('.', ',') + ' kg';
+    kgmV = kgm.toFixed(1).replace('.', ',') + ' kg';
   }
 
   let hIn = altezza / 2.54;
@@ -417,13 +378,34 @@ async function generaPDFLogica() {
   set('r-gcc', gccV);
   set('r-fm', fmV);
   set('r-ffm', ffmV);
+  set('r-kgg', kggV);
+  set('r-kgm', kgmV);
   set('r-ibw', ibwV);
   set('r-pliche', haPliche ? sommaPliche.toFixed(1).replace('.', ',') + ' mm' : '-');
   set('r-peso', peso > 0 ? peso.toFixed(1).replace('.', ',') + ' kg' : '-');
 
-  const areaRender = document.getElementById('preview-area');
-  areaRender.classList.remove('hidden-pdf-render');
+  // Mappatura dinamica tabella Pagina 2
+  const antroRows = document.getElementById('r-antro-rows');
+  if (antroRows) {
+    let html = '';
+    document.querySelectorAll('#cont-antro input').forEach(input => {
+      const label = input.parentElement.querySelector('label')?.textContent || 'Misura';
+      const val = input.value ? input.value + ' cm' : '-';
+      html += `<tr><td>${label}</td><td><strong>${val}</strong></td></tr>`;
+    });
+    document.querySelectorAll('#cont-pliche input').forEach(input => {
+      const label = input.parentElement.querySelector('label')?.textContent || 'Plica';
+      const val = input.value ? input.value + ' mm' : '-';
+      html += `<tr><td>${label}</td><td><strong>${val}</strong></td></tr>`;
+    });
+    antroRows.innerHTML = html;
+  }
 
+  document.getElementById('preview-area').style.display = 'block';
+  document.getElementById('preview-area').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function scaricaPDF() {
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -433,21 +415,20 @@ async function generaPDFLogica() {
       const canvas = await html2canvas(pagine[i], {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
-        width: 794,
-        height: 1123
+        allowTaint: true
       });
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
     }
 
-    const nomeFile = `${nominativo} - Composizione corporea e Fabbisogni energetici.pdf`;
+    const nomeFile = `${currentPatient.nominativo} - Composizione corporea e Fabbisogni energetici.pdf`;
     pdf.save(nomeFile);
-    console.log('✅ Documento scaricato:', nomeFile);
   } catch (err) {
     console.error('❌ Errore durante l\'esportazione del PDF:', err);
-  } finally {
-    areaRender.classList.add('hidden-pdf-render');
+    alert('Impossibile esportare il file PDF. Controlla la console.');
   }
 }
+
+// Esponi globalmente per compatibilità con vecchi bottoni inline
+window.scaricaPDF = scaricaPDF;
