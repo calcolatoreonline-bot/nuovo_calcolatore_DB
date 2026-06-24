@@ -3,7 +3,15 @@
 ══════════════════════════════════════════════════════════════════════════════ */
 const supabaseUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
 const supabaseKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// Evita dichiarazione doppia
+let supabase;
+if (!window.supabaseClient) {
+  supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  window.supabaseClient = supabase;
+} else {
+  supabase = window.supabaseClient;
+}
 
 /* ══════════════════════════════════════════════════════════════════════════════
    2. VARIABILI DI STATO E RISORSE PDF
