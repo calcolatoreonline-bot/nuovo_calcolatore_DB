@@ -1,8 +1,8 @@
 /* ══════════════════════════════════════
    1. CONFIGURAZIONE SUPABASE
 ══════════════════════════════════════ */
-const supabaseUrl = 'INSERISCI_IL_TUO_PROJECT_URL_QUI';
-const supabaseKey = 'INSERISCI_LA_TUA_CHIAVE_ANON_QUI';
+const supabaseUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
+const supabaseKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 /* ══════════════════════════════════════
@@ -83,30 +83,30 @@ async function selezionaPaziente(id, nominativo, sesso, data_nascita) {
 
 function aggiornaFormUI(s) {
   document.getElementById('cont-antro').innerHTML = s === 'M' ? `
-    <div><label>Collo</label><input type="number" id="c-collo" step="0.1"></div>
-    <div><label>Torace</label><input type="number" id="c-torace" step="0.1"></div>
-    <div><label>Vita</label><input type="number" id="c-vita" step="0.1"></div>
-    <div><label>Fianchi</label><input type="number" id="c-fianchi" step="0.1"></div>
-    <div><label>Braccio</label><input type="number" id="c-braccio" step="0.1"></div>
-    <div><label>Coscia</label><input type="number" id="c-coscia" step="0.1"></div>
+    <div><label>Collo (cm)</label><input type="number" id="c-collo" step="0.1"></div>
+    <div><label>Torace (cm)</label><input type="number" id="c-torace" step="0.1"></div>
+    <div><label>Vita (cm)</label><input type="number" id="c-vita" step="0.1"></div>
+    <div><label>Fianchi (cm)</label><input type="number" id="c-fianchi" step="0.1"></div>
+    <div><label>Braccio (cm)</label><input type="number" id="c-braccio" step="0.1"></div>
+    <div><label>Coscia (cm)</label><input type="number" id="c-coscia" step="0.1"></div>
   ` : `
-    <div><label>Collo</label><input type="number" id="c-collo" step="0.1"></div>
-    <div><label>Vita</label><input type="number" id="c-vita" step="0.1"></div>
-    <div><label>Fianchi</label><input type="number" id="c-fianchi" step="0.1"></div>
-    <div><label>Gluteo</label><input type="number" id="c-gluteo" step="0.1"></div>
-    <div><label>Braccio</label><input type="number" id="c-braccio" step="0.1"></div>
-    <div><label>Coscia</label><input type="number" id="c-coscia" step="0.1"></div>
+    <div><label>Collo (cm)</label><input type="number" id="c-collo" step="0.1"></div>
+    <div><label>Vita (cm)</label><input type="number" id="c-vita" step="0.1"></div>
+    <div><label>Fianchi (cm)</label><input type="number" id="c-fianchi" step="0.1"></div>
+    <div><label>Gluteo (cm)</label><input type="number" id="c-gluteo" step="0.1"></div>
+    <div><label>Braccio (cm)</label><input type="number" id="c-braccio" step="0.1"></div>
+    <div><label>Coscia (cm)</label><input type="number" id="c-coscia" step="0.1"></div>
   `;
 
   const pliche = s === 'M' ? ['Pettorale','Ascellare','Addome','Soprailiaca','Tricipitale','Sottoscapolare','Coscia'] : ['Addome','Soprailiaca','Tricipitale','Sottoscapolare','Coscia'];
-  document.getElementById('cont-pliche').innerHTML = pliche.map(p => `<div><label>${p}</label><input type="number" id="p-${p.toLowerCase()}" step="0.1"></div>`).join('');
+  document.getElementById('cont-pliche').innerHTML = pliche.map(p => `<div><label>${p} (mm)</label><input type="number" id="p-${p.toLowerCase()}" step="0.1"></div>`).join('');
 }
 
 /* ══════════════════════════════════════
    5. STORICO VISITE E GRAFICI
 ══════════════════════════════════════ */
 async function caricaStoricoVisite(pazienteId) {
-  const { data, error } = await supabase.from('visite').select('*').eq('paziente_id', pazienteId).order('data_visita', { ascending: true });
+  const { data, error } = await supabase.from('visite').select('*').eq('paziente_id', pacienteId).order('data_visita', { ascending: true });
   if (error) return;
 
   const select = document.getElementById('select-visita-storica');
@@ -142,7 +142,7 @@ function aggiornaGrafici(visite) {
 
   const ctxComp = document.getElementById('chart-composizione').getContext('2d');
   chartCompInstance = new Chart(ctxComp, {
-    type: 'line', // Semplificato per ora, da espandere con la logica FM/FFM
+    type: 'line',
     data: { labels: date, datasets: [{ label: 'Peso (kg)', data: pesi, borderColor: '#2563eb' }] }
   });
 }
@@ -190,7 +190,7 @@ document.getElementById('btn-salva-visita').addEventListener('click', async () =
   } else {
     await supabase.from('visite').insert([payload]);
   }
-  alert('Visita salvata su Supabase!');
+  alert('Visita salvata correttamente su Supabase!');
   caricaStoricoVisite(currentPatient.id);
 });
 
@@ -261,7 +261,7 @@ function generaPDFLogica() {
 }
 
 /* ══════════════════════════════════════
-   7. STAMPA PDF (Rispettando nome assegnato)
+   7. STAMPA PDF
 ══════════════════════════════════════ */
 async function scaricaPDF() {
   const btn = document.getElementById('btn-pdf');
@@ -287,8 +287,7 @@ async function scaricaPDF() {
     }
 
     const nom = document.getElementById('in-nominativo').value.trim() || 'PAZIENTE';
-    const data = [new Date().getDate(), new Date().getMonth()+1, new Date().getFullYear()].map(x=>String(x).padStart(2,'0')).join('-');
-    pdf.save(`${nom} Composizione corporea e Fabbisogni energetici ${data}.pdf`);
+    pdf.save(`${nom} Composizione corporea e Fabbisogni energetici.pdf`);
   } catch(e) {
     console.error(e); alert('Errore generazione PDF');
   }
