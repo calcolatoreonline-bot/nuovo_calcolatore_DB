@@ -1,0 +1,133 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM NUTRITION ELITE - TEMA BLU PROFONDO & ACCENTI SMALTO
+═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --elite-blue: #1e40af;
+  --elite-blue-dark: #1e3a8a;
+  --elite-blue-light: #3b82f6;
+  --elite-green: #059669;
+  --elite-green-dark: #047857;
+  --elite-teal: #14b8a6;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-light: #9ca3af;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --border-color: #e5e7eb;
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* RESET ELEMENTI BASE */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* TOPBAR HEADER */
+.topbar {
+  background: linear-gradient(135deg, var(--elite-blue) 0%, var(--elite-blue-dark) 100%);
+  color: white;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.brand-title { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+.topbar-controls { display: flex; gap: 16px; align-items: center; }
+
+/* SEARCH BAR & DROPDOWN */
+.search-container { position: relative; width: 260px; }
+.search-container input {
+  width: 100%; padding: 8px 14px; border-radius: 6px; border: none; outline: none;
+}
+.search-results-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; background: white;
+  box-shadow: var(--shadow-lg); border-radius: 6px; margin-top: 5px;
+  max-height: 200px; overflow-y: auto; z-index: 110;
+}
+.search-result-item { padding: 10px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+.search-result-item:hover { background: var(--bg-tertiary); }
+
+/* LAYOUT STRUCTURE */
+.dashboard-container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+.patient-badge-card {
+  background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--elite-blue); margin-bottom: 24px;
+}
+.gender-badge { background: var(--elite-teal); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+
+/* GRAFICI */
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px; }
+.chart-card { background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-md); }
+
+/* GRID STRUTTURALE FORM */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.form-card { background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-md); border-top: 3px solid var(--elite-blue); }
+.card-header { font-weight: 700; color: var(--elite-blue-dark); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+
+.grid { display: grid; gap: 12px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+input, select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; outline: none; }
+input:focus, select:focus { border-color: var(--elite-blue); }
+
+/* BOTTONI */
+.btn { padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; }
+.btn-primary { background: white; color: var(--elite-blue); }
+.btn-primary-dark { background: var(--elite-blue); color: white; }
+.btn-success { background: var(--elite-green); color: white; }
+.btn-secondary { background: var(--text-light); color: white; }
+
+/* COMPONENTE ISOLATO: MODALE GESTIONE PAZIENTE */
+.modal {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay {
+  position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px);
+}
+.modal-container {
+  position: relative; background: white; width: 440px; max-width: 90%;
+  border-radius: 8px; box-shadow: var(--shadow-lg); overflow: hidden; z-index: 210;
+}
+.modal-header {
+  background: var(--elite-blue-dark); color: white; padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.btn-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+.modal-body { padding: 20px; }
+.modal-actions { padding: 16px; display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-secondary); }
+
+/* STRUTTURA TECNICA FANTASMA PER BUFFER GENERAZIONE PDF */
+.hidden-pdf-render {
+  position: absolute; left: -9999px; top: -9999px; width: 794px; overflow: hidden;
+}
+.pdf-page {
+  width: 794px; height: 1123px; background: white; padding: 60px;
+  display: flex; flex-direction: column; box-sizing: border-box;
+}
+.hdr { display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+.hdr-logo { height: 50px; }
+.title-blue { font-size: 24px; color: var(--elite-blue-dark); font-weight: 800; }
+.title-yellow { font-size: 24px; color: #b45309; font-weight: 800; }
+.pdf-body { flex: 1; }
+table.rt { width: 100%; border-collapse: collapse; margin-top: 20px; }
+table.rt th { background: var(--bg-tertiary); text-align: left; padding: 10px; font-size: 14px; border: 1px solid var(--border-color); }
+table.rt td { padding: 10px; font-size: 13px; border: 1px solid var(--border-color); }
+
+.hidden { display: none !important; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
