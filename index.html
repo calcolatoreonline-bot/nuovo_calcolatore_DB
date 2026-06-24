@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Nutrizione Elite - Dott. De Salvo</title>
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="manifest" href="site.webmanifest">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L20 7V17H4V7L12 2Z"/>
+      </svg>
+      <span class="brand-title">ELITE NUTRITION</span>
+    </div>
+    <div class="topbar-controls">
+      <div class="search-container">
+        <input type="text" id="patient-search" placeholder="🔍 Cerca paziente..." autocomplete="off">
+        <div id="search-results" class="search-results-dropdown"></div>
+      </div>
+      <button id="btn-open-modal" class="btn btn-primary">
+        <span>+</span> Nuovo Paziente
+      </button>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+    
+    <section id="selected-patient-card" class="patient-badge-card">
+      <div class="patient-info-section">
+        <div class="patient-info-header">
+          <h2 id="current-patient-name">Seleziona un paziente per iniziare</h2>
+          <span id="patient-gender-badge" class="gender-badge"></span>
+        </div>
+        <div class="visit-selector-wrapper">
+          <label for="select-visita-storica">Seleziona Visita:</label>
+          <select id="select-visita-storica">
+            <option value="new">➕ Nuova Visita (Oggi)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section id="charts-section" class="charts-grid">
+      <div class="chart-card">
+        <h3>Andamento Peso Corporeo (kg)</h3>
+        <canvas id="chart-peso"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Composizione Corporea Storicizzata (%)</h3>
+        <canvas id="chart-composizione"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Evoluzione Circonferenze (cm)</h3>
+        <canvas id="chart-circonferenze"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Andamento Pliche Cutanee (mm)</h3>
+        <canvas id="chart-pliche-trend"></canvas>
+      </div>
+    </section>
+
+    <section id="section-visita-form" class="visita-form-section">
+      <h2 id="form-visita-title">Dati Antropometrici e Plicometrici</h2>
+      <form id="form-valutazione" onsubmit="return false;">
+        
+        <input type="hidden" id="in-nominativo">
+        <input type="hidden" id="in-sesso">
+
+        <div class="form-grid">
+          <div class="form-card">
+            <div class="card-header">📏 Parametri Base</div>
+            <div class="grid g3">
+              <div class="form-group">
+                <label>Età</label>
+                <input type="number" id="in-eta" placeholder="30" min="1" max="120">
+              </div>
+              <div class="form-group">
+                <label>Peso (kg)</label>
+                <input type="number" id="in-peso" placeholder="75.5" step="0.1" min="20" max="300">
+              </div>
+              <div class="form-group">
+                <label>Altezza (cm)</label>
+                <input type="number" id="in-altezza" placeholder="180" min="100" max="250">
+              </div>
+            </div>
+            <div class="form-group mt-12">
+              <label>Livello di Attività Fisica (LAF)</label>
+              <select id="in-laf">
+                <option value="1.2">Sedentario (1.2)</option>
+                <option value="1.375" selected>Leggero (1.375)</option>
+                <option value="1.55">Moderato (1.55)</option>
+                <option value="1.725">Molto Attivo (1.725)</option>
+                <option value="1.9">Atleta (1.9)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="card-header">📐 Misure Antropometriche (cm)</div>
+            <div id="cont-antro" class="grid g3"></div>
+          </div>
+        </div>
+
+        <div class="form-card mt-16">
+          <div class="card-header">📊 Pliche (mm)</div>
+          <div id="cont-pliche" class="grid g4"></div>
+        </div>
+
+        <div class="form-actions">
+          <button id="btn-salva-visita" class="btn btn-success">
+            <span>💾</span> Salva Visita nel Cloud
+          </button>
+          <button id="btn-calcola-report" class="btn btn-primary">
+            <span>📊</span> Elabora e Genera Report
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <div id="modal-paziente" class="modal hidden">
+      <div class="modal-overlay" id="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Registra Nuovo Paziente</h3>
+          <button id="btn-close-modal" class="modal-close" title="Chiudi">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Cognome Nome *</label>
+            <input type="text" id="new-nominativo" placeholder="Es. ROSSI MARIO" style="text-transform: uppercase;">
+          </div>
+          <div class="grid g2 mt-12">
+            <div class="form-group">
+              <label>Sesso *</label>
+              <select id="new-sesso">
+                <option value="">Seleziona...</option>
+                <option value="M">Maschio</option>
+                <option value="F">Femmina</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data di Nascita</label>
+              <input type="date" id="new-nascita">
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-close-modal-cancel" class="btn btn-secondary">Annulla</button>
+          <button type="button" id="btn-registra-paziente" class="btn btn-primary">Registra</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="preview-area" style="display:none; margin-top: 40px;">
+      <div style="text-align:center; margin-bottom: 24px;">
+        <button id="btn-pdf" class="btn btn-success" style="width: 100%; max-width: 400px; font-size: 16px; padding: 14px; border-radius: 8px;">
+          📥 Scarica PDF Report
+        </button>
+      </div>
+
+      <div class="pg-container-mobile">
+        <div class="pg-wrap" id="pg1">
+          <div class="pdf-page" id="pdf-p1">
+            <div class="hdr">
+              <div class="hdr-sil"><img id="r-sil-l" alt="Silhouette"></div>
+              <div class="hdr-mid">
+                <img class="hdr-logo" id="r-logo1" alt="Logo">
+                <div class="p1-nome" id="r-nome1"></div>
+                <div class="p1-data" id="r-data1"></div>
+              </div>
+              <div class="hdr-sil r"><img id="r-sil-r" alt="Silhouette"></div>
+            </div>
+            <div class="title-blue">Fabbisogni Energetici</div>
+            <div class="tbl-wrap">
+              <img class="wmark" id="r-wm1" alt="Watermark">
+              <table class="rt">
+                <tbody>
+                  <tr><td>BMR (Metabolismo Basale)</td><td id="r-bmr">-</td></tr>
+                  <tr><td>RMR (Metabolismo a Riposo)</td><td id="r-rmr">-</td></tr>
+                  <tr><td>TDEE (Giornaliero)</td><td id="r-tdee">-</td></tr>
+                  <tr><td>TDEE Settimanale</td><td id="r-tdeew">-</td></tr>
+                  <tr><td>G/CC (Densità)</td><td id="r-gcc">-</td></tr>
+                  <tr><td>Massa Grassa (FM)</td><td id="r-fm">-</td></tr>
+                  <tr><td>Massa Magra (FFM)</td><td id="r-ffm">-</td></tr>
+                  <tr><td>Peso Ideale (Range)</td><td id="r-ibw">-</td></tr>
+                  <tr><td>Kg Grasso Corporeo</td><td id="r-kgg">-</td></tr>
+                  <tr><td>Kg Massa Magra</td><td id="r-kgm">-</td></tr>
+                  <tr><td id="r-lbl-pliche">Plicometria totale</td><td id="r-pliche">-</td></tr>
+                  <tr><td>Peso Corporeo Attuale</td><td id="r-peso">-</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg-container-mobile">
+        <div class="pg-wrap" id="pg2">
+          <div class="pdf-page" id="pdf-p2">
+            <div class="hdr">
+              <div class="hdr-sil"><img id="r-esil-l" alt="Elite Graphic"></div>
+              <div class="hdr-mid">
+                <img class="hdr-logo" id="r-logo2" alt="Logo">
+                <div class="title-yellow">Composizione<br>Corporea</div>
+                <div class="p2-nome" id="r-nome2"></div>
+                <div class="p2-data" id="r-data2"></div>
+              </div>
+              <div class="hdr-sil r"><img id="r-esil-r" alt="Elite Graphic"></div>
+            </div>
+            <div class="p2-tbl-wrap">
+              <img class="wmark" id="r-wm2" alt="Watermark">
+              <table class="rt">
+                <tbody id="r-antro-rows"></tbody>
+              </table>
+            </div>
+            <div class="p2-footer" id="r-footer"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js?v=4.0" defer></script>
+</body>
+</html>
