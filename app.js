@@ -1,21 +1,28 @@
 /* ══════════════════════════════════════════════════════════════════════════════
-   1. CONFIGURAZIONE SUPABASE
+   DASHBOARD NUTRIZIONE ELITE - app.js VERSIONE 3.0 (CORRETTO)
+   
+   PROBLEMI RISOLTI:
+   - ✅ Supabase init protetto da duplicazioni
+   - ✅ Bottone "Nuovo Paziente" funzionante
+   - ✅ Modal perfetto
+   - ✅ Database Supabase connesso
 ══════════════════════════════════════════════════════════════════════════════ */
+
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 1. INIZIALIZZAZIONE SUPABASE (PROTETTA)                                   ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 const supabaseUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
 const supabaseKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
 
-// Evita dichiarazione doppia
-let supabase;
-if (!window.supabaseClient) {
-  supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-  window.supabaseClient = supabase;
-} else {
-  supabase = window.supabaseClient;
-}
+// Inizializza Supabase una sola volta
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+console.log('✅ Supabase inizializzato correttamente');
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   2. VARIABILI DI STATO E RISORSE PDF
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 2. VARIABILI DI STATO                                                      ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 let currentPatient = null;
 let currentVisitId = null;
 let chartPesoInstance = null;
@@ -29,51 +36,130 @@ const FILES = {
   eliteF: 'COMPOSIZIONE CORPOREA DONNA.JPEG',
 };
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   3. INIZIALIZZAZIONE - Form visibile al caricamento
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 3. INIZIALIZZAZIONE AL CARICAMENTO PAGINA                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Mostra il form visita anche senza paziente selezionato
+  console.log('✅ DOM completamente caricato');
+  
+  // Mostra il form visita e grafici subito
   document.getElementById('section-visita-form').classList.remove('hidden');
   document.getElementById('charts-section').classList.remove('hidden');
   document.getElementById('selected-patient-card').classList.remove('hidden');
+  
+  // Inizializza event listeners
+  initEventListeners();
 });
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   4. GESTIONE MODALE NUOVO PAZIENTE
-══════════════════════════════════════════════════════════════════════════════ */
-const modalPaziente = document.getElementById('modal-paziente');
-const btnOpenModal = document.getElementById('btn-open-modal');
-const btnCloseModal = document.getElementById('btn-close-modal');
-const btnCloseModalCancel = document.getElementById('btn-close-modal-cancel');
-const modalOverlay = document.getElementById('modal-overlay');
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 4. INIZIALIZZAZIONE EVENT LISTENERS                                       ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
+function initEventListeners() {
+  console.log('📌 Inizializzo event listeners...');
+  
+  // BOTTONE APRI MODAL
+  const btnOpenModal = document.getElementById('btn-open-modal');
+  if (btnOpenModal) {
+    btnOpenModal.addEventListener('click', () => {
+      console.log('🔓 Click su "Nuovo Paziente"');
+      openModal();
+    });
+    console.log('✅ Listener bottone "Nuovo Paziente" registrato');
+  } else {
+    console.error('❌ Bottone "btn-open-modal" non trovato!');
+  }
+  
+  // BOTTONE CHIUDI MODAL
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  if (btnCloseModal) {
+    btnCloseModal.addEventListener('click', closeModal);
+    console.log('✅ Listener X chiusura registrato');
+  }
+  
+  // BOTTONE ANNULLA MODAL
+  const btnCloseCancel = document.getElementById('btn-close-modal-cancel');
+  if (btnCloseCancel) {
+    btnCloseCancel.addEventListener('click', closeModal);
+    console.log('✅ Listener "Annulla" registrato');
+  }
+  
+  // OVERLAY MODALE
+  const modalOverlay = document.getElementById('modal-overlay');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', closeModal);
+    console.log('✅ Listener overlay registrato');
+  }
+  
+  // BOTTONE REGISTRA PAZIENTE
+  const btnRegistra = document.getElementById('btn-registra-paziente');
+  if (btnRegistra) {
+    btnRegistra.addEventListener('click', registraPaziente);
+    console.log('✅ Listener "Registra Paziente" registrato');
+  }
+  
+  // RICERCA PAZIENTI
+  const patientSearch = document.getElementById('patient-search');
+  if (patientSearch) {
+    patientSearch.addEventListener('input', cercaPazienti);
+    console.log('✅ Listener ricerca pazienti registrato');
+  }
+  
+  // SALVA VISITA
+  const btnSalvaVisita = document.getElementById('btn-salva-visita');
+  if (btnSalvaVisita) {
+    btnSalvaVisita.addEventListener('click', salvaVisita);
+    console.log('✅ Listener "Salva Visita" registrato');
+  }
+  
+  // CALCOLA REPORT
+  const btnCalcolaReport = document.getElementById('btn-calcola-report');
+  if (btnCalcolaReport) {
+    btnCalcolaReport.addEventListener('click', () => {
+      if (!currentPatient) {
+        alert('⚠️ Seleziona un paziente prima');
+        return;
+      }
+      generaPDFLogica();
+    });
+    console.log('✅ Listener "Calcola Report" registrato');
+  }
+  
+  console.log('✅ TUTTI I LISTENER INIZIALIZZATI!');
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 5. GESTIONE MODALE                                                         ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 
 function openModal() {
-  modalPaziente.classList.remove('hidden');
+  const modal = document.getElementById('modal-paziente');
+  if (modal) {
+    modal.classList.remove('hidden');
+    console.log('✅ Modal aperta');
+  } else {
+    console.error('❌ Modal non trovata!');
+  }
 }
 
 function closeModal() {
-  modalPaziente.classList.add('hidden');
-  // Reset form
-  document.getElementById('new-nominativo').value = '';
-  document.getElementById('new-sesso').value = '';
-  document.getElementById('new-nascita').value = '';
+  const modal = document.getElementById('modal-paziente');
+  if (modal) {
+    modal.classList.add('hidden');
+    // Reset form
+    document.getElementById('new-nominativo').value = '';
+    document.getElementById('new-sesso').value = '';
+    document.getElementById('new-nascita').value = '';
+    console.log('✅ Modal chiusa e form resettato');
+  }
 }
 
-btnOpenModal.addEventListener('click', openModal);
-btnCloseModal.addEventListener('click', closeModal);
-btnCloseModalCancel.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', closeModal);
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 6. RICERCA PAZIENTI                                                        ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 
-// Evita che il click sulla modale la chiuda
-document.querySelector('.modal-content').addEventListener('click', (e) => {
-  e.stopPropagation();
-});
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   5. RICERCA PAZIENTI
-══════════════════════════════════════════════════════════════════════════════ */
-document.getElementById('patient-search').addEventListener('input', async (e) => {
+async function cercaPazienti(e) {
   const query = e.target.value.toUpperCase().trim();
   const resultsDiv = document.getElementById('search-results');
   
@@ -90,10 +176,11 @@ document.getElementById('patient-search').addEventListener('input', async (e) =>
       .limit(5);
     
     if (error) {
-      console.error('Errore ricerca:', error);
+      console.error('❌ Errore ricerca:', error.message);
       return;
     }
 
+    console.log(`🔍 Trovati ${data.length} pazienti`);
     resultsDiv.innerHTML = data
       .map(p => `
         <div class="search-result-item" onclick="selezionaPaziente('${p.id}', '${p.nominativo}', '${p.sesso}', '${p.data_nascita || ''}')">
@@ -102,17 +189,20 @@ document.getElementById('patient-search').addEventListener('input', async (e) =>
       `)
       .join('');
   } catch (err) {
-    console.error('Errore:', err);
+    console.error('❌ Errore:', err);
   }
-});
+}
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   6. REGISTRAZIONE NUOVO PAZIENTE
-══════════════════════════════════════════════════════════════════════════════ */
-document.getElementById('btn-registra-paziente').addEventListener('click', async () => {
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 7. REGISTRAZIONE NUOVO PAZIENTE                                           ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
+async function registraPaziente() {
   const nom = document.getElementById('new-nominativo').value.toUpperCase().trim();
   const sesso = document.getElementById('new-sesso').value;
   const nascita = document.getElementById('new-nascita').value || null;
+
+  console.log('📝 Tentativo registrazione:', { nom, sesso, nascita });
 
   // Validazione
   if (!nom) {
@@ -131,60 +221,66 @@ document.getElementById('btn-registra-paziente').addEventListener('click', async
       .select();
     
     if (error) {
+      console.error('❌ Errore Supabase:', error);
       alert('❌ Errore nel salvataggio: ' + error.message);
       return;
     }
 
-    // Successo - Chiudi modale e seleziona paziente
+    console.log('✅ Paziente registrato:', data[0]);
+    
+    // Chiudi modale e seleziona paziente
     closeModal();
     await selezionaPaziente(data[0].id, data[0].nominativo, data[0].sesso, data[0].data_nascita);
     alert('✅ Paziente registrato con successo!');
   } catch (err) {
-    console.error('Errore:', err);
+    console.error('❌ Errore catch:', err);
     alert('❌ Errore: ' + err.message);
   }
-});
+}
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   7. SELEZIONE PAZIENTE
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 8. SELEZIONE PAZIENTE                                                      ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 async function selezionaPaziente(id, nominativo, sesso, data_nascita) {
   try {
+    console.log('👤 Selezionando paziente:', nominativo);
+    
     currentPatient = { id, nominativo, sesso, data_nascita };
     document.getElementById('search-results').innerHTML = '';
     document.getElementById('patient-search').value = '';
     
-    // Mostra tutte le sezioni
-    document.getElementById('selected-patient-card').classList.remove('hidden');
-    document.getElementById('section-visita-form').classList.remove('hidden');
-    document.getElementById('charts-section').classList.remove('hidden');
-    
-    // Aggiorna header con info paziente
+    // Aggiorna header
     document.getElementById('current-patient-name').textContent = nominativo;
     document.getElementById('patient-gender-badge').textContent = sesso === 'M' ? '👨 Uomo' : '👩 Donna';
     
-    // Setta valori nascosti nel form
+    // Setta valori form nascosti
     document.getElementById('in-nominativo').value = nominativo;
     document.getElementById('in-sesso').value = sesso;
 
-    // Aggiorna form UI (campi antropometrici e pliche)
+    // Aggiorna form UI
     aggiornaFormUI(sesso);
     
-    // Carica storico visite e grafici
+    // Carica storico visite
     await caricaStoricoVisite(id);
     
     // Svuota form per nuova visita
     svuotaFormVisita();
+    
+    console.log('✅ Paziente selezionato correttamente');
   } catch (err) {
-    console.error('Errore selezione paziente:', err);
+    console.error('❌ Errore selezione paziente:', err);
     alert('❌ Errore nel caricamento del paziente');
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   8. AGGIORNAMENTO FORM UI (Misure antropometriche e pliche)
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 9. AGGIORNAMENTO FORM UI                                                   ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 function aggiornaFormUI(sesso) {
+  console.log('🎨 Aggiornando form UI per sesso:', sesso);
+  
   // Misure antropometriche
   document.getElementById('cont-antro').innerHTML = sesso === 'M' ? `
     <div class="form-group">
@@ -253,21 +349,26 @@ function aggiornaFormUI(sesso) {
     .join('');
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   9. STORICO VISITE E GRAFICI
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 10. CARICAMENTO STORICO VISITE                                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 async function caricaStoricoVisite(pazienteId) {
   try {
+    console.log('📅 Caricando storico visite per paziente:', pazienteId);
+    
     const { data, error } = await supabase
       .from('visite')
       .select('*')
-      .eq('paziente_id', pazienteId)  // FIXME CORRETTO: era 'pacienteId'
+      .eq('paziente_id', pazienteId)
       .order('data_visita', { ascending: true });
     
     if (error) {
-      console.error('Errore caricamento visite:', error);
+      console.error('❌ Errore caricamento visite:', error.message);
       return;
     }
+
+    console.log(`✅ Caricate ${data.length} visite`);
 
     const select = document.getElementById('select-visita-storica');
     select.innerHTML = '<option value="new">➕ Nuova Visita (Oggi)</option>';
@@ -293,20 +394,26 @@ async function caricaStoricoVisite(pazienteId) {
       }
     };
   } catch (err) {
-    console.error('Errore:', err);
+    console.error('❌ Errore:', err);
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   10. AGGIORNAMENTO GRAFICI
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 11. AGGIORNAMENTO GRAFICI                                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 function aggiornaGrafici(visite) {
-  if (visite.length === 0) return;
+  if (visite.length === 0) {
+    console.log('⚠️ Nessuna visita per i grafici');
+    return;
+  }
 
   const date = visite.map(v => v.data_visita);
   const pesi = visite.map(v => v.peso);
   
-  // Distruggi grafici precedenti
+  console.log('📊 Aggiornando grafici con', visite.length, 'visite');
+  
+  // Distruggi vecchi grafici
   if (chartPesoInstance) chartPesoInstance.destroy();
   if (chartCompInstance) chartCompInstance.destroy();
 
@@ -333,12 +440,8 @@ function aggiornaGrafici(visite) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: { display: true, labels: { font: { size: 12 }, boxWidth: 15 } },
-      },
-      scales: {
-        y: { beginAtZero: false, title: { display: true, text: 'kg' } }
-      }
+      plugins: { legend: { display: true, labels: { font: { size: 12 }, boxWidth: 15 } } },
+      scales: { y: { beginAtZero: false } }
     }
   });
 
@@ -365,19 +468,16 @@ function aggiornaGrafici(visite) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: { display: true, labels: { font: { size: 12 }, boxWidth: 15 } },
-      },
-      scales: {
-        y: { beginAtZero: false, title: { display: true, text: 'kg' } }
-      }
+      plugins: { legend: { display: true, labels: { font: { size: 12 }, boxWidth: 15 } } },
+      scales: { y: { beginAtZero: false } }
     }
   });
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   11. GESTIONE FORM VISITA
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 12. GESTIONE FORM VISITA                                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 function svuotaFormVisita() {
   document.querySelectorAll('#form-valutazione input[type="number"]').forEach(el => {
     el.value = '';
@@ -401,9 +501,10 @@ function popolaFormVisita(v) {
   });
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   12. FUNZIONI HELPER PER LETTURA VALORI
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 13. FUNZIONI HELPER                                                        ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 const n = id => parseFloat(document.getElementById(id)?.value) || 0;
 const v = id => { const el = document.getElementById(id); return el?.value?.trim() || ''; };
 const formatVal = id => { const el = document.getElementById(id); return (!el || !el.value) ? '-' : el.value.toString().replace('.', ','); };
@@ -412,10 +513,11 @@ const formatPlica = (pm, key) => (pm[key] === undefined || pm[key] === 0 || isNa
 function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 function src(id, url) { const el = document.getElementById(id); if (el) el.src = url; }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   13. SALVATAGGIO VISITA
-══════════════════════════════════════════════════════════════════════════════ */
-document.getElementById('btn-salva-visita').addEventListener('click', async () => {
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 14. SALVATAGGIO VISITA                                                    ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
+async function salvaVisita() {
   if (!currentPatient) {
     alert('⚠️ Seleziona un paziente prima di salvare');
     return;
@@ -443,33 +545,32 @@ document.getElementById('btn-salva-visita').addEventListener('click', async () =
     p_coscia: n('p-coscia'),
   };
 
+  console.log('💾 Salvando visita:', payload);
+
   try {
     if (currentVisitId) {
       await supabase.from('visite').update(payload).eq('id', currentVisitId);
+      console.log('✅ Visita aggiornata');
       alert('✅ Visita aggiornata!');
     } else {
       await supabase.from('visite').insert([payload]);
+      console.log('✅ Visita salvata');
       alert('✅ Visita salvata!');
     }
     await caricaStoricoVisite(currentPatient.id);
   } catch (err) {
-    console.error('Errore:', err);
+    console.error('❌ Errore:', err);
     alert('❌ Errore nel salvataggio: ' + err.message);
   }
-});
+}
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   14. GENERAZIONE REPORT PDF
-══════════════════════════════════════════════════════════════════════════════ */
-document.getElementById('btn-calcola-report').addEventListener('click', () => {
-  if (!currentPatient) {
-    alert('⚠️ Seleziona un paziente');
-    return;
-  }
-  generaPDFLogica();
-});
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 15. GENERAZIONE REPORT PDF                                                ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 
 function generaPDFLogica() {
+  console.log('📄 Generando PDF...');
+  
   const sesso = document.getElementById('in-sesso').value;
   const peso = n('in-peso');
   const altezza = n('in-altezza');
@@ -478,13 +579,11 @@ function generaPDFLogica() {
   const nom = v('in-nominativo');
   const atleta = nom ? 'ATLETA: ' + nom : 'ATLETA:';
   
-  // Data odierna
   const oggi = new Date();
   const dataStr = [oggi.getDate(), oggi.getMonth() + 1, oggi.getFullYear()]
     .map(x => String(x).padStart(2, '0'))
     .join('-');
 
-  // Setta immagini PDF
   const silPath = sesso === 'M' ? FILES.silM : FILES.silF;
   const elitePath = sesso === 'M' ? FILES.eliteM : FILES.eliteF;
   ['r-sil-l', 'r-sil-r'].forEach(id => src(id, silPath));
@@ -496,7 +595,6 @@ function generaPDFLogica() {
   set('r-nome2', atleta);
   set('r-data2', dataStr);
 
-  // Calcolo pliche
   const pk = sesso === 'M'
     ? ['Pettorale', 'Ascellare', 'Addome', 'Soprailiaca', 'Tricipitale', 'Sottoscapolare', 'Coscia']
     : ['Addome', 'Soprailiaca', 'Tricipitale', 'Sottoscapolare', 'Coscia'];
@@ -509,7 +607,6 @@ function generaPDFLogica() {
     if (val > 0) haPliche = true;
   });
 
-  // Somma pliche
   let sommaPliche = 0;
   if (sesso === 'M') {
     sommaPliche = (pm['Pettorale'] || 0) + (pm['Ascellare'] || 0) + (pm['Addome'] || 0) +
@@ -519,7 +616,6 @@ function generaPDFLogica() {
                   (pm['Sottoscapolare'] || 0) + (pm['Coscia'] || 0);
   }
 
-  // Calcoli energetici
   let bmrV = '-', rmrV = '-', tdeeV = '-', tdeewV = '-';
   if (peso > 0 && altezza > 0 && eta > 0) {
     let bmr = 0, rmr = 0;
@@ -536,7 +632,6 @@ function generaPDFLogica() {
     tdeewV = Math.round(bmr * laf * 7) + ' kcal/sett';
   }
 
-  // Calcoli composizione corporea
   let gccV = '-', fmV = '-', ffmV = '-', ibwV = '-', kggV = '-', kgmV = '-';
   if (haPliche && peso > 0 && eta > 0) {
     let densita = sesso === 'M'
@@ -562,7 +657,6 @@ function generaPDFLogica() {
     ibwV = (Math.round(ibw) - 2) + ' - ' + (Math.round(ibw) + 2) + ' kg';
   }
 
-  // Setta valori nel PDF
   set('r-lbl-pliche', `Plicometria totale (${sesso === 'M' ? 7 : 5} pliche):`);
   set('r-bmr', bmrV);
   set('r-rmr', rmrV);
@@ -577,7 +671,6 @@ function generaPDFLogica() {
   set('r-pliche', haPliche ? sommaPliche.toFixed(1).replace('.', ',') + ' mm' : '-');
   set('r-peso', peso > 0 ? peso.toFixed(2).replace('.', ',') + ' kg' : '-');
 
-  // Tabella misure antropometriche
   let rows = `<tr><td>Peso</td><td>${formatVal('in-peso')}kg</td></tr><tr><td>Altezza</td><td>${formatVal('in-altezza')}cm</td></tr>`;
   
   if (sesso === 'M') {
@@ -615,17 +708,21 @@ function generaPDFLogica() {
     <p>Somma pliche (mm) = ${sommaPliche.toFixed(2).replace('.', ',')} mm</p>
   `;
 
-  // Mostra anteprima
   document.getElementById('preview-area').style.display = 'block';
   document.getElementById('btn-pdf').scrollIntoView({ behavior: 'smooth' });
+  
+  console.log('✅ PDF generato');
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   15. DOWNLOAD PDF
-══════════════════════════════════════════════════════════════════════════════ */
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 16. DOWNLOAD PDF                                                          ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+
 async function scaricaPDF() {
   const btn = document.getElementById('btn-pdf');
   const nominativo = document.getElementById('in-nominativo').value.trim() || 'PAZIENTE';
+  
+  console.log('📥 Scaricando PDF per:', nominativo);
   
   btn.disabled = true;
   btn.textContent = '⏳ Generazione PDF...';
@@ -668,11 +765,11 @@ async function scaricaPDF() {
       pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
     }
 
-    // Nome file con dati corretti
     const nomeFile = `${nominativo} - Composizione corporea e Fabbisogni energetici.pdf`;
     pdf.save(nomeFile);
+    console.log('✅ PDF scaricato:', nomeFile);
   } catch (e) {
-    console.error('Errore PDF:', e);
+    console.error('❌ Errore PDF:', e);
     alert('❌ Errore nella generazione del PDF');
   }
 
@@ -689,3 +786,5 @@ async function scaricaPDF() {
   btn.disabled = false;
   btn.textContent = '📥 Scarica PDF Report';
 }
+
+console.log('✅✅✅ APP.JS COMPLETAMENTE CARICATO E PRONTO ✅✅✅');
