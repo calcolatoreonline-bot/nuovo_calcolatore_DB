@@ -1,16 +1,19 @@
 /* ══════════════════════════════════════════════════════════════════════════════
-   DASHBOARD NUTRIZIONE ELITE - app.js VERSIONE 3.0 (STABILIZZATA)
+   DASHBOARD NUTRIZIONE ELITE - app.js VERSIONE 3.1 (SUPER BLINDATA)
 ══════════════════════════════════════════════════════════════════════════════ */
 
-// 1. CONFIGURAZIONE SUPABASE
 const supabaseUrl = 'https://ympbqcmbhnjerjqxgska.supabase.co';
 const supabaseKey = 'sb_publishable_8bs12qrDkQmPi4pOQTMQyg_ef9r5-KW';
-let supabase = null;
+
+let supabase = window.supabaseClient || null;
 
 try {
-  if (window.supabase && typeof window.supabase.createClient === 'function') {
+  if (!supabase && window.supabase && typeof window.supabase.createClient === 'function') {
     supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-    console.log('✅ Supabase inizializzato correttamente');
+    window.supabaseClient = supabase;
+    console.log('✅ Supabase inizializzato correttamente e protetto da duplicazioni');
+  } else if (supabase) {
+    console.log('🔄 Supabase già presente, riutilizzo l\'istanza esistente');
   } else {
     console.error('❌ Libreria Supabase non caricata globalmente!');
   }
@@ -18,7 +21,6 @@ try {
   console.error('❌ Eccezione durante l\'inizializzazione di Supabase:', err);
 }
 
-// 2. VARIABILI DI STATO
 let currentPatient = null;
 let currentVisitId = null;
 let chartPesoInstance = null;
@@ -32,23 +34,12 @@ const FILES = {
   eliteF: 'COMPOSIZIONE CORPOREA DONNA.JPEG',
 };
 
-// 3. INIZIALIZZAZIONE AL CARICAMENTO DEL DOM
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ DOM completamente costruito ed analizzato');
-  
-  // Rendi visibili le sezioni base predefinite
-  document.getElementById('section-visita-form').classList.remove('hidden');
-  document.getElementById('charts-section').classList.remove('hidden');
-  document.getElementById('selected-patient-card').classList.remove('hidden');
-  
-  // Registra gli ascoltatori degli eventi
+  console.log('✅ DOM completamente caricato.');
   initEventListeners();
 });
 
-// 4. REGISTRAZIONE EVENT LISTENERS
 function initEventListeners() {
-  console.log('📌 Associazione Event Listeners...');
-  
   const btnOpenModal = document.getElementById('btn-open-modal');
   if (btnOpenModal) {
     btnOpenModal.addEventListener('click', (e) => {
@@ -56,8 +47,6 @@ function initEventListeners() {
       openModal();
     });
     console.log('✅ Listener bottone "Nuovo Paziente" attivato.');
-  } else {
-    console.error('❌ Bottone "btn-open-modal" assente nel DOM.');
   }
 
   document.getElementById('btn-close-modal')?.addEventListener('click', closeModal);
@@ -86,27 +75,17 @@ function initEventListeners() {
   });
 }
 
-// 5. GESTIONE DELLA MODALE PAZIENTE
 function openModal() {
-  const modal = document.getElementById('modal-paziente');
-  if (modal) {
-    modal.classList.remove('hidden');
-    console.log('🔓 Apertura finestra di registrazione');
-  }
+  document.getElementById('modal-paziente')?.classList.remove('hidden');
 }
 
 function closeModal() {
-  const modal = document.getElementById('modal-paziente');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.getElementById('new-nominativo').value = '';
-    document.getElementById('new-sesso').value = '';
-    document.getElementById('new-nascita').value = '';
-    console.log('🔒 Chiusura finestra e reset campi completato');
-  }
+  document.getElementById('modal-paziente')?.classList.add('hidden');
+  document.getElementById('new-nominativo').value = '';
+  document.getElementById('new-sesso').value = '';
+  document.getElementById('new-nascita').value = '';
 }
 
-// 6. RICERCA COMPLETA PAZIENTI IN SUPABASE
 async function cercaPazienti(e) {
   const query = e.target.value.toUpperCase().trim();
   const resultsDiv = document.getElementById('search-results');
@@ -115,7 +94,6 @@ async function cercaPazienti(e) {
     resultsDiv.innerHTML = '';
     return;
   }
-
   if (!supabase) return;
 
   try {
@@ -143,13 +121,11 @@ async function cercaPazienti(e) {
         );
       });
     });
-
   } catch (err) {
     console.error('❌ Errore ricerca:', err.message);
   }
 }
 
-// 7. REGISTRAZIONE DI UN NUOVO PAZIENTE
 async function registraPaziente() {
   const nom = document.getElementById('new-nominativo').value.toUpperCase().trim();
   const sesso = document.getElementById('new-sesso').value;
@@ -159,7 +135,6 @@ async function registraPaziente() {
     alert('⚠️ Campi obbligatori mancanti.');
     return;
   }
-
   if (!supabase) return;
 
   try {
@@ -178,10 +153,8 @@ async function registraPaziente() {
   }
 }
 
-// 8. SELEZIONE E ATTIVAZIONE PAZIENTE
 async function selezionaPaziente(id, nominativo, sesso, data_nascita) {
   currentPatient = { id, nominativo, sesso, data_nascita };
-  
   document.getElementById('search-results').innerHTML = '';
   document.getElementById('patient-search').value = '';
   
@@ -203,7 +176,6 @@ async function selezionaPaziente(id, nominativo, sesso, data_nascita) {
   currentVisitId = null;
 }
 
-// 9. COSTRUZIONE FORM DINAMICO IN BASE AL SESSO
 function aggiornaFormUI(sesso) {
   const contAntro = document.getElementById('cont-antro');
   const contPliche = document.getElementById('cont-pliche');
@@ -237,7 +209,6 @@ function aggiornaFormUI(sesso) {
   }
 }
 
-// 10. CARICAMENTO CRONOLOGIA VISITE
 async function caricaStoricoVisite(pazienteId) {
   if (!supabase) return;
   try {
@@ -262,10 +233,8 @@ async function caricaStoricoVisite(pazienteId) {
   }
 }
 
-// 11. GENERAZIONE GRAFICI CHART.JS
 function aggiornaGrafici(visite) {
   if (visite.length === 0) return;
-
   const labels = visite.map(v => new Date(v.data_visita).toLocaleDateString('it-IT'));
   const pesi = visite.map(v => v.peso);
 
@@ -291,10 +260,8 @@ function aggiornaGrafici(visite) {
   });
 }
 
-// Helper di estrazione numerica dei valori di input
 const n = id => parseFloat(document.getElementById(id)?.value) || 0;
 
-// 12. SALVATAGGIO O AGGIORNAMENTO DEL RECORD VISITA
 async function salvaVisita() {
   if (!currentPatient) {
     alert('⚠️ Nessun paziente selezionato.');
@@ -343,7 +310,6 @@ async function salvaVisita() {
   }
 }
 
-// 13. ESTENSIBILE: RECUPERO DATI DI UNA SINGOLA VISITA ARCHIVIATA
 async function caricaDatiVisitaSingola(id) {
   if (!supabase) return;
   try {
@@ -378,13 +344,11 @@ function svuotaFormVisita() {
   document.getElementById('in-laf').value = '1.55';
 }
 
-// Helper per manipolazione DOM nel rendering di testo
 function set(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
 }
 
-// 14. LOGICA DI CALCOLO E GENERAZIONE PDF ELITE
 async function generaPDFLogica() {
   const sesso = currentPatient.sesso;
   const nominativo = currentPatient.nominativo;
@@ -399,7 +363,6 @@ async function generaPDFLogica() {
   set('r-nome2', nominativo);
   set('r-data2', odierna);
 
-  // Calcolo Equazioni Energetiche
   let bmrV = '-', rmrV = '-', tdeeV = '-', tdeewV = '-';
   if (peso > 0 && altezza > 0 && eta > 0) {
     let bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + (sesso === 'M' ? 5 : -161);
@@ -418,7 +381,6 @@ async function generaPDFLogica() {
   set('r-tdee', tdeeV);
   set('r-tdeew', tdeewV);
 
-  // Calcolo Pliche e Composizione
   let sommaPliche = 0;
   const plicheList = sesso === 'M' 
     ? ['pettorale', 'ascellare', 'addome', 'soprailiaca', 'tricipitale', 'sottoscapolare', 'coscia']
@@ -459,9 +421,8 @@ async function generaPDFLogica() {
   set('r-pliche', haPliche ? sommaPliche.toFixed(1).replace('.', ',') + ' mm' : '-');
   set('r-peso', peso > 0 ? peso.toFixed(1).replace('.', ',') + ' kg' : '-');
 
-  // TRIGGER RENDERING PDF ASINCRONO VIA JSPDF
   const areaRender = document.getElementById('preview-area');
-  areaRender.classList.remove('hidden-pdf-render'); // Rendi leggibile per html2canvas
+  areaRender.classList.remove('hidden-pdf-render');
 
   try {
     const { jsPDF } = window.jspdf;
@@ -487,6 +448,6 @@ async function generaPDFLogica() {
   } catch (err) {
     console.error('❌ Errore durante l\'esportazione del PDF:', err);
   } finally {
-    areaRender.classList.add('hidden-pdf-render'); // Torna ad oscurare l'area tecnica
+    areaRender.classList.add('hidden-pdf-render');
   }
 }
