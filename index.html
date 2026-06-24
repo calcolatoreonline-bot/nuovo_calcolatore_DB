@@ -11,10 +11,10 @@
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="manifest" href="site.webmanifest">
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="stylesheet" href="style.css">
 </head>
@@ -128,7 +128,6 @@
       </div>
     </div>
 
-    <!-- AREA PDF EREDITATA -->
     <section id="preview-area" style="display:none; margin-top: 40px;">
       <div style="text-align:center; margin-bottom: 20px;">
         <button id="btn-pdf" class="btn btn-primary" onclick="scaricaPDF()" style="width: 100%; max-width: 400px; font-size: 18px; padding: 15px;">📥 Scarica PDF Report</button>
@@ -196,6 +195,6 @@
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
