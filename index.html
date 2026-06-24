@@ -45,31 +45,12 @@
           <h2 id="current-patient-name">Seleziona un paziente per iniziare</h2>
           <span id="patient-gender-badge" class="gender-badge"></span>
         </div>
-        <div class="visit-selector-wrapper">
+        <div class="visit-selector-wrapper" style="margin-top: 12px;">
           <label for="select-visita-storica">Seleziona Visita:</label>
           <select id="select-visita-storica">
             <option value="new">➕ Nuova Visita (Oggi)</option>
           </select>
         </div>
-      </div>
-    </section>
-
-    <section id="charts-section" class="charts-grid">
-      <div class="chart-card">
-        <h3>Andamento Peso Corporeo (kg)</h3>
-        <canvas id="chart-peso"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Composizione Corporea Storicizzata (%)</h3>
-        <canvas id="chart-composizione"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Evoluzione Circonferenze (cm)</h3>
-        <canvas id="chart-circonferenze"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Andamento Pliche Cutanee (mm)</h3>
-        <canvas id="chart-pliche-trend"></canvas>
       </div>
     </section>
 
@@ -131,58 +112,7 @@
       </form>
     </section>
 
-    <div id="modal-paziente" class="modal hidden">
-      <div class="modal-overlay" id="modal-overlay"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Registra Nuovo Paziente</h3>
-          <button id="btn-close-modal" class="modal-close" title="Chiudi">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Cognome Nome *</label>
-            <input type="text" id="new-nominativo" placeholder="Es. ROSSI MARIO" style="text-transform: uppercase;">
-          </div>
-          <div class="grid g2 mt-12">
-            <div class="form-group">
-              <label>Sesso *</label>
-              <select id="new-sesso">
-                <option value="">Seleziona...</option>
-                <option value="M">Maschio</option>
-                <option value="F">Femmina</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Data di Nascita</label>
-              <input type="date" id="new-nascita">
-            </div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" id="btn-close-modal-cancel" class="btn btn-secondary">Annulla</button>
-          <button type="button" id="btn-registra-paziente" class="btn btn-primary">Registra</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="banner-rubrica" class="rubrica-overlay hidden">
-      <div class="rubrica-content">
-        <div class="rubrica-header">
-          <div class="rubrica-title-wrap">
-            <h2>📖 Rubrica Anagrafica Pazienti</h2>
-            <p>Seleziona un profilo o usa la barra per filtrare istantaneamente i record</p>
-          </div>
-          <button id="btn-close-rubrica" class="rubrica-close-btn">&times;</button>
-        </div>
-        <div class="rubrica-search-wrapper">
-          <input type="text" id="rubrica-search-input" placeholder="🔍 Digita il cognome o nome per filtrare la lista dei pazienti...">
-        </div>
-        <div id="rubrica-patients-container" class="rubrica-grid-list">
-          </div>
-      </div>
-    </div>
-
-    <section id="preview-area" style="display:none; margin-top: 40px;">
+    <section id="preview-area" class="hidden" style="margin-top: 40px;">
       <div style="text-align:center; margin-bottom: 24px;">
         <button id="btn-pdf" class="btn btn-success" style="width: 100%; max-width: 400px; font-size: 16px; padding: 14px; border-radius: 8px;">
           📥 Scarica PDF Report
@@ -249,8 +179,86 @@
         </div>
       </div>
     </section>
+
+    <section id="charts-section" class="charts-grid hidden" style="margin-top: 30px;">
+      <div class="chart-card">
+        <h3>Andamento Peso Corporeo (kg)</h3>
+        <canvas id="chart-peso"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Indice di Massa Corporea (BMI)</h3>
+        <canvas id="chart-bmi"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Composizione Corporea Storicizzata (%)</h3>
+        <canvas id="chart-composizione"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Circonferenze Tronco (cm)</h3>
+        <canvas id="chart-circonferenze-tronco"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Circonferenze Arti (cm)</h3>
+        <canvas id="chart-circonferenze-arti"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Andamento Pliche Cutanee Principali (mm)</h3>
+        <canvas id="chart-pliche-trend"></canvas>
+      </div>
+    </section>
+
   </main>
 
-  <script src="app.js?v=5.0" defer></script>
+  <div id="modal-paziente" class="modal hidden">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Registra Nuovo Paziente</h3>
+        <button id="btn-close-modal" class="modal-close" title="Chiudi">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Cognome Nome *</label>
+          <input type="text" id="new-nominativo" placeholder="Es. ROSSI MARIO" style="text-transform: uppercase;">
+        </div>
+        <div class="grid g2 mt-12">
+          <div class="form-group">
+            <label>Sesso *</label>
+            <select id="new-sesso">
+              <option value="">Seleziona...</option>
+              <option value="M">Maschio</option>
+              <option value="F">Femmina</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data di Nascita</label>
+            <input type="date" id="new-nascita">
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-close-modal-cancel" class="btn btn-secondary">Annulla</button>
+        <button type="button" id="btn-registra-paziente" class="btn btn-primary">Registra</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="banner-rubrica" class="rubrica-overlay hidden">
+    <div class="rubrica-content">
+      <div class="rubrica-header">
+        <div class="rubrica-title-wrap">
+          <h2>📖 Rubrica Anagrafica Pazienti</h2>
+          <p>Seleziona un profilo o usa la barra per filtrare istantaneamente i record</p>
+        </div>
+        <button id="btn-close-rubrica" class="rubrica-close-btn">&times;</button>
+      </div>
+      <div class="rubrica-search-wrapper">
+        <input type="text" id="rubrica-search-input" placeholder="🔍 Digita il cognome o nome per filtrare la lista dei pazienti...">
+      </div>
+      <div id="rubrica-patients-container" class="rubrica-grid-list"></div>
+    </div>
+  </div>
+
+  <script src="app.js?v=6.0" defer></script>
 </body>
 </html>
