@@ -20,8 +20,12 @@
 </head>
 <body>
 
+  <!-- HEADER MODERNO -->
   <header class="topbar">
     <div class="topbar-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L20 7V17H4V7L12 2Z"/>
+      </svg>
       <span class="brand-title">ELITE NUTRITION</span>
     </div>
     <div class="topbar-controls">
@@ -29,26 +33,32 @@
         <input type="text" id="patient-search" placeholder="🔍 Cerca paziente..." autocomplete="off">
         <div id="search-results" class="search-results-dropdown"></div>
       </div>
-      <button id="btn-open-modal" class="btn btn-primary">+ Nuovo Paziente</button>
+      <button id="btn-open-modal" class="btn btn-primary">
+        <span>+</span> Nuovo Paziente
+      </button>
     </div>
   </header>
 
   <main class="dashboard-container">
     
-    <section id="selected-patient-card" class="patient-badge-card hidden">
-      <div class="patient-info-header">
-        <h2 id="current-patient-name">Seleziona un paziente</h2>
-        <span id="patient-gender-badge" class="gender-badge"></span>
-      </div>
-      <div class="visit-selector-wrapper">
-        <label for="select-visita-storica">Seleziona Visita:</label>
-        <select id="select-visita-storica">
-          <option value="new">➕ Nuova Visita (Oggi)</option>
-        </select>
+    <!-- CARD PAZIENTE SELEZIONATO -->
+    <section id="selected-patient-card" class="patient-badge-card">
+      <div class="patient-info-section">
+        <div class="patient-info-header">
+          <h2 id="current-patient-name">Seleziona un paziente per iniziare</h2>
+          <span id="patient-gender-badge" class="gender-badge"></span>
+        </div>
+        <div class="visit-selector-wrapper">
+          <label for="select-visita-storica">Seleziona Visita:</label>
+          <select id="select-visita-storica">
+            <option value="new">➕ Nuova Visita (Oggi)</option>
+          </select>
+        </div>
       </div>
     </section>
 
-    <section id="charts-section" class="charts-grid hidden">
+    <!-- SEZIONE GRAFICI -->
+    <section id="charts-section" class="charts-grid">
       <div class="chart-card">
         <h3>Andamento Peso (kg)</h3>
         <canvas id="chart-peso"></canvas>
@@ -59,7 +69,8 @@
       </div>
     </section>
 
-    <section id="section-visita-form" class="visita-form-section hidden">
+    <!-- FORM VISITA - SEMPRE VISIBILE -->
+    <section id="section-visita-form" class="visita-form-section">
       <h2 id="form-visita-title">Dati Antropometrici e Plicometrici</h2>
       <form id="form-valutazione" onsubmit="return false;">
         
@@ -67,14 +78,24 @@
         <input type="hidden" id="in-sesso">
 
         <div class="form-grid">
+          <!-- PARAMETRI BASE -->
           <div class="form-card">
-            <div class="card-header">Parametri Base</div>
+            <div class="card-header">📏 Parametri Base</div>
             <div class="grid g3">
-              <div><label>Età</label><input type="number" id="in-eta" placeholder="Età"></div>
-              <div><label>Peso (kg)</label><input type="number" id="in-peso" placeholder="Peso" step="0.1"></div>
-              <div><label>Altezza (cm)</label><input type="number" id="in-altezza" placeholder="Altezza"></div>
+              <div class="form-group">
+                <label>Età</label>
+                <input type="number" id="in-eta" placeholder="30" min="1" max="120">
+              </div>
+              <div class="form-group">
+                <label>Peso (kg)</label>
+                <input type="number" id="in-peso" placeholder="75.5" step="0.1" min="20" max="300">
+              </div>
+              <div class="form-group">
+                <label>Altezza (cm)</label>
+                <input type="number" id="in-altezza" placeholder="180" min="100" max="250">
+              </div>
             </div>
-            <div class="mt-12">
+            <div class="form-group mt-12">
               <label>Livello di Attività Fisica (LAF)</label>
               <select id="in-laf">
                 <option value="1.2">Sedentario (1.2)</option>
@@ -86,51 +107,72 @@
             </div>
           </div>
 
+          <!-- MISURE ANTROPOMETRICHE -->
           <div class="form-card">
-            <div class="card-header">Misure Antropometriche (cm)</div>
+            <div class="card-header">📐 Misure Antropometriche (cm)</div>
             <div id="cont-antro" class="grid g3"></div>
           </div>
         </div>
 
+        <!-- PLICHE -->
         <div class="form-card mt-16">
-          <div class="card-header">Pliche (mm)</div>
+          <div class="card-header">📊 Pliche (mm)</div>
           <div id="cont-pliche" class="grid g4"></div>
         </div>
 
+        <!-- PULSANTI AZIONE -->
         <div class="form-actions">
-          <button id="btn-salva-visita" class="btn btn-success">💾 Salva Visita</button>
-          <button id="btn-calcola-report" class="btn btn-primary">📊 Calcola e Genera PDF</button>
+          <button id="btn-salva-visita" class="btn btn-success">
+            <span>💾</span> Salva Visita
+          </button>
+          <button id="btn-calcola-report" class="btn btn-primary">
+            <span>📊</span> Calcola e Genera PDF
+          </button>
         </div>
       </form>
     </section>
 
+    <!-- MODAL NUOVO PAZIENTE -->
     <div id="modal-paziente" class="modal hidden">
+      <div class="modal-overlay" id="modal-overlay"></div>
       <div class="modal-content">
-        <h3>Registra Nuovo Paziente</h3>
-        <div class="form-group">
-          <label>Cognome Nome*</label>
-          <input type="text" id="new-nominativo" style="text-transform: uppercase;">
+        <div class="modal-header">
+          <h3>Registra Nuovo Paziente</h3>
+          <button id="btn-close-modal" class="modal-close" title="Chiudi">&times;</button>
         </div>
-        <div class="grid g2 mt-12">
+        <div class="modal-body">
           <div class="form-group">
-            <label>Sesso*</label>
-            <select id="new-sesso"><option value="M">Maschio</option><option value="F">Femmina</option></select>
+            <label>Cognome Nome *</label>
+            <input type="text" id="new-nominativo" placeholder="Es. Rossi Mario" style="text-transform: uppercase;">
           </div>
-          <div class="form-group">
-            <label>Data di Nascita</label>
-            <input type="date" id="new-nascita">
+          <div class="grid g2 mt-12">
+            <div class="form-group">
+              <label>Sesso *</label>
+              <select id="new-sesso">
+                <option value="">Seleziona...</option>
+                <option value="M">Maschio</option>
+                <option value="F">Femmina</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data di Nascita</label>
+              <input type="date" id="new-nascita">
+            </div>
           </div>
         </div>
-        <div class="modal-actions mt-16">
-          <button id="btn-close-modal" class="btn btn-secondary">Annulla</button>
-          <button id="btn-registra-paziente" class="btn btn-primary">Salva</button>
+        <div class="modal-actions">
+          <button type="button" id="btn-close-modal-cancel" class="btn btn-secondary">Annulla</button>
+          <button type="button" id="btn-registra-paziente" class="btn btn-primary">Registra</button>
         </div>
       </div>
     </div>
 
+    <!-- ANTEPRIMA E DOWNLOAD PDF -->
     <section id="preview-area" style="display:none; margin-top: 40px;">
       <div style="text-align:center; margin-bottom: 20px;">
-        <button id="btn-pdf" class="btn btn-primary" onclick="scaricaPDF()" style="width: 100%; max-width: 400px; font-size: 18px; padding: 15px;">📥 Scarica PDF Report</button>
+        <button id="btn-pdf" class="btn btn-success" onclick="scaricaPDF()" style="width: 100%; max-width: 500px; font-size: 18px; padding: 15px; border-radius: 10px;">
+          📥 Scarica PDF Report
+        </button>
       </div>
 
       <div class="pg-container-mobile">
